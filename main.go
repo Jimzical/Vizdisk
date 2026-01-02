@@ -47,6 +47,7 @@ func main() {
 
 	// Use CommandContext so the scan can be interrupted
 	cmd := exec.CommandContext(ctx, "ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
+	cmd.Stderr = os.Stderr
 
 	// Increase buffer for large outputs if necessary, but ReadAll handles it
 	output, err := cmd.Output()
