@@ -338,17 +338,17 @@
                     const containerRect = container.getBoundingClientRect();
                     
                     let left = event.clientX + 15;
-                    let top = event.clientY + 15;
+                    let top = event.clientY - 125;
                     
                     // If tooltip would go off right edge, position it to the left of cursor
                     if (left + tooltipRect.width > window.innerWidth - 10) {
-                        left = event.clientX - tooltipRect.width - 15;
+                        left = event.clientX - tooltipRect.width - 25;
                     }
                     
                     // If tooltip would go off bottom of container, position it well above cursor
                     // Add extra buffer to account for the info panel
-                    if (top + tooltipRect.height > containerRect.bottom - 10) {
-                        top = event.clientY - tooltipRect.height - 75;
+                    if (top + tooltipRect.height > containerRect.bottom - 100) {
+                        top = event.clientY - tooltipRect.height - 125;
                     }
                     
                     // Ensure tooltip doesn't go off left edge
