@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -8,7 +9,10 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
+	"syscall"
+	"time"
 )
 
 //go:embed index.html
@@ -24,6 +28,10 @@ type D3Node struct {
 }
 
 func main() {
+	// Setup context for graceful shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	// 1. Determine directory to scan
 	scanDir := "."
 	if len(os.Args) > 1 {
@@ -37,11 +45,16 @@ func main() {
 
 	fmt.Printf("Scanning '%s' with ncdu... (this may take a moment)\n", scanDir)
 
-	cmd := exec.Command("ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
+	// Use CommandContext so the scan can be interrupted
+	cmd := exec.CommandContext(ctx, "ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
 
 	// Increase buffer for large outputs if necessary, but ReadAll handles it
 	output, err := cmd.Output()
 	if err != nil {
+		if ctx.Err() == context.Canceled {
+			fmt.Println("\nScan cancelled by user.")
+			return
+		}
 		log.Fatalf("Error running ncdu: %v", err)
 	}
 
@@ -87,7 +100,32 @@ func main() {
 		openBrowser(url)
 	}
 
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: nil, // Uses DefaultServeMux
+	}
+
+	// Run server in a goroutine
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// Wait for interrupt signal
+	<-ctx.Done()
+	fmt.Println("\nShutting down server...")
+
+	// Create a deadline to wait for active requests to complete
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	fmt.Println("Server exiting")
 }
 
 func parseNode(raw any, parentPath string) *D3Node {
