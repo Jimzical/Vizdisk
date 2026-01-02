@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/jimzical/vizdisk/internal/vizdisk"
 	"log"
@@ -30,43 +29,11 @@ func main() {
 		log.Fatal("Error: 'ncdu' command not found. Please install it (e.g., sudo apt install ncdu) or ensure it's in your PATH.")
 	}
 
-	fmt.Printf("Scanning '%s' with ncdu... (this may take a moment)\n", scanDir)
-
-	// Using CommandContext so the scan can be interrupted
-	cmd := exec.CommandContext(ctx, "ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
-	cmd.Stderr = os.Stderr
-
-	output, err := cmd.Output()
-	if err != nil {
-		if ctx.Err() == context.Canceled {
-			fmt.Println("\nScan cancelled by user.")
-			return
-		}
-		log.Fatalf("Error running ncdu: %v", err)
-	}
-
-	fmt.Println("Scan complete. Parsing data...")
-
-	var raw []any
-	if err := json.Unmarshal(output, &raw); err != nil {
-		log.Fatalf("Error parsing JSON output from ncdu: %v", err)
-	}
-
-	// ncdu format: [major, minor, metadata, root]
-	if len(raw) < 4 {
-		log.Fatal("Invalid ncdu output format")
-	}
-
-	rootRaw := raw[3]
-
-	// 4. Transform Data
-	rootNode := vizdisk.ParseNode(rootRaw, "")
-
 	// 5. Setup Server
 	http.HandleFunc("/", vizdisk.HandleIndex)
 	http.HandleFunc("/style.css", vizdisk.HandleCSS)
 	http.HandleFunc("/app.js", vizdisk.HandleJS)
-	http.HandleFunc("/data", vizdisk.HandleData(rootNode))
+	http.HandleFunc("/data", vizdisk.HandleData(scanDir))
 
 	port := os.Getenv("NCDU_PORT")
 	if port == "" {

@@ -56,10 +56,16 @@ func HandleJS(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleData(rootNode *D3Node) http.HandlerFunc {
+func HandleData(scanDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-Requested-With") != "DiskTreeApp" {
 			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		rootNode, err := ScanAndParse(r.Context(), scanDir)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

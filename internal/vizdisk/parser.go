@@ -1,5 +1,13 @@
 package vizdisk
 
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // D3Node represents the structure D3.js expects
 type D3Node struct {
 	Name     string    `json:"name"`
@@ -62,4 +70,35 @@ func buildPath(parent, name string) string {
 		return name
 	}
 	return parent + "/" + name
+}
+
+func ScanAndParse(ctx context.Context, scanDir string) (*D3Node, error) {
+	// Check if ncdu is installed
+	if _, err := exec.LookPath("ncdu"); err != nil {
+		return nil, fmt.Errorf("'ncdu' command not found. Please install it")
+	}
+
+	// Using CommandContext so the scan can be interrupted
+	cmd := exec.CommandContext(ctx, "ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
+	cmd.Stderr = os.Stderr
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("error running ncdu: %v", err)
+	}
+
+	var raw []any
+	if err := json.Unmarshal(output, &raw); err != nil {
+		return nil, fmt.Errorf("error parsing JSON output from ncdu: %v", err)
+	}
+
+	// ncdu format: [major, minor, metadata, root]
+	if len(raw) < 4 {
+		return nil, fmt.Errorf("invalid ncdu output format")
+	}
+
+	rootRaw := raw[3]
+
+	// Transform Data
+	return ParseNode(rootRaw, ""), nil
 }
