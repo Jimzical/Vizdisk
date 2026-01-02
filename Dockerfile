@@ -4,7 +4,7 @@ FROM golang:alpine AS builder
 WORKDIR /app
 COPY . .
 # Build the binary. We disable CGO for a static binary, though not strictly necessary for Alpine->Alpine
-RUN CGO_ENABLED=0 go build -o disktree main.go
+RUN CGO_ENABLED=0 go build -o vizdisk main.go
 
 # Final stage
 FROM alpine:latest
@@ -17,7 +17,7 @@ ENV IS_DOCKER_CONTAINER=true
 ENV NCDU_PORT=8810
 
 WORKDIR /app
-COPY --from=builder /app/disktree .
+COPY --from=builder /app/vizdisk .
 
 # Create a directory for mounting the volume to scan
 WORKDIR /scan
@@ -26,5 +26,5 @@ WORKDIR /scan
 EXPOSE 8810
 
 # Run the application
-ENTRYPOINT ["/app/disktree", "."]
+ENTRYPOINT ["/app/vizdisk", "."]
 

@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"disktree/internal/disktree"
 	"encoding/json"
 	"fmt"
+	"github.com/jimzical/vizdisk/internal/vizdisk"
 	"log"
 	"net/http"
 	"os"
@@ -60,13 +60,13 @@ func main() {
 	rootRaw := raw[3]
 
 	// 4. Transform Data
-	rootNode := disktree.ParseNode(rootRaw, "")
+	rootNode := vizdisk.ParseNode(rootRaw, "")
 
 	// 5. Setup Server
-	http.HandleFunc("/", disktree.HandleIndex)
-	http.HandleFunc("/style.css", disktree.HandleCSS)
-	http.HandleFunc("/app.js", disktree.HandleJS)
-	http.HandleFunc("/data", disktree.HandleData(rootNode))
+	http.HandleFunc("/", vizdisk.HandleIndex)
+	http.HandleFunc("/style.css", vizdisk.HandleCSS)
+	http.HandleFunc("/app.js", vizdisk.HandleJS)
+	http.HandleFunc("/data", vizdisk.HandleData(rootNode))
 
 	port := os.Getenv("NCDU_PORT")
 	if port == "" {
@@ -78,7 +78,7 @@ func main() {
 	// 6. Open Browser
 	// Only try to open browser if not running in a container (simple heuristic)
 	if os.Getenv("IS_DOCKER_CONTAINER") != "true" {
-		disktree.OpenBrowser(url)
+		vizdisk.OpenBrowser(url)
 	}
 
 	srv := &http.Server{

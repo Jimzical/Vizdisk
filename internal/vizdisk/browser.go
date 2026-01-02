@@ -1,4 +1,4 @@
-package disktree
+package vizdisk
 
 import (
 	"fmt"

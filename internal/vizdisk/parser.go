@@ -1,4 +1,4 @@
-package disktree
+package vizdisk
 
 // D3Node represents the structure D3.js expects
 type D3Node struct {
