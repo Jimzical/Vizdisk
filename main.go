@@ -4,7 +4,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -25,31 +24,47 @@ type D3Node struct {
 }
 
 func main() {
-	// 1. Read ncdu.json
-	file, err := os.Open("ncdu.json")
-	if err != nil {
-		log.Fatalf("Could not open ncdu.json: %v", err)
+	// 1. Determine directory to scan
+	scanDir := "."
+	if len(os.Args) > 1 {
+		scanDir = os.Args[1]
 	}
-	defer file.Close()
 
-	byteValue, _ := io.ReadAll(file)
+	// 2. Check if ncdu is installed
+	if _, err := exec.LookPath("ncdu"); err != nil {
+		log.Fatal("Error: 'ncdu' command not found. Please install it (e.g., sudo apt install ncdu) or ensure it's in your PATH.")
+	}
+
+	fmt.Printf("Scanning '%s' with ncdu... (this may take a moment)\n", scanDir)
+
+	// 3. Run ncdu and capture output directly
+	// -o - tells ncdu to output JSON to stdout
+	cmd := exec.Command("ncdu", "-o", "-", scanDir)
+
+	// Increase buffer for large outputs if necessary, but ReadAll handles it
+	output, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Error running ncdu: %v", err)
+	}
+
+	fmt.Println("Scan complete. Parsing data...")
 
 	var raw []interface{}
-	if err := json.Unmarshal(byteValue, &raw); err != nil {
-		log.Fatalf("Error parsing JSON: %v", err)
+	if err := json.Unmarshal(output, &raw); err != nil {
+		log.Fatalf("Error parsing JSON output from ncdu: %v", err)
 	}
 
 	// ncdu format: [major, minor, metadata, root]
 	if len(raw) < 4 {
-		log.Fatal("Invalid ncdu.json format")
+		log.Fatal("Invalid ncdu output format")
 	}
 
 	rootRaw := raw[3]
-	
-	// 2. Transform Data
+
+	// 4. Transform Data
 	rootNode := parseNode(rootRaw, "")
 
-	// 3. Setup Server
+	// 5. Setup Server
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		data, _ := content.ReadFile("index.html")
 		w.Header().Set("Content-Type", "text/html")
@@ -65,7 +80,7 @@ func main() {
 	url := "http://localhost:" + port
 	fmt.Printf("Serving at %s\n", url)
 
-	// 4. Open Browser
+	// 6. Open Browser
 	openBrowser(url)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
@@ -107,7 +122,7 @@ func parseNode(raw interface{}, parentPath string) *D3Node {
 		if s, ok := meta["asize"].(float64); ok {
 			size = int64(s)
 		}
-		
+
 		return &D3Node{
 			Name:  name,
 			Path:  parentPath + "/" + name,
