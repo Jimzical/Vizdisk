@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
 
@@ -56,16 +58,24 @@ func HandleJS(w http.ResponseWriter, r *http.Request) {
 
 func HandleData(rootNode *D3Node) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		if r.Header.Get("X-Requested-With") != "DiskTreeApp" {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
 
+		w.Header().Set("Content-Type", "text/plain")
+
+		var output io.Writer = w
 		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			w.Header().Set("Content-Encoding", "gzip")
 			gz := gzip.NewWriter(w)
 			defer gz.Close()
-			json.NewEncoder(gz).Encode(rootNode)
-			return
+			output = gz
 		}
 
-		json.NewEncoder(w).Encode(rootNode)
+		b64Encoder := base64.NewEncoder(base64.StdEncoding, output)
+		defer b64Encoder.Close()
+
+		json.NewEncoder(b64Encoder).Encode(rootNode)
 	}
 }
