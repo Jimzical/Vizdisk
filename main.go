@@ -64,6 +64,8 @@ func main() {
 
 	// 5. Setup Server
 	http.HandleFunc("/", disktree.HandleIndex)
+	http.HandleFunc("/style.css", disktree.HandleCSS)
+	http.HandleFunc("/app.js", disktree.HandleJS)
 	http.HandleFunc("/data", disktree.HandleData(rootNode))
 
 	port := os.Getenv("NCDU_PORT")
