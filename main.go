@@ -49,7 +49,7 @@ func main() {
 
 	fmt.Println("Scan complete. Parsing data...")
 
-	var raw []interface{}
+	var raw []any
 	if err := json.Unmarshal(output, &raw); err != nil {
 		log.Fatalf("Error parsing JSON output from ncdu: %v", err)
 	}
@@ -76,7 +76,7 @@ func main() {
 		json.NewEncoder(w).Encode(rootNode)
 	})
 
-	port := "8080"
+	port := "8810"
 	url := "http://localhost:" + port
 	fmt.Printf("Serving at %s\n", url)
 
@@ -86,10 +86,10 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
-func parseNode(raw interface{}, parentPath string) *D3Node {
+func parseNode(raw any, parentPath string) *D3Node {
 	// Case 1: Directory (Array) -> [ {metadata}, child1, child2... ]
-	if list, ok := raw.([]interface{}); ok && len(list) > 0 {
-		meta, _ := list[0].(map[string]interface{})
+	if list, ok := raw.([]any); ok && len(list) > 0 {
+		meta, _ := list[0].(map[string]any)
 		name := meta["name"].(string)
 		currentPath := parentPath + "/" + name
 		if parentPath == "" {
