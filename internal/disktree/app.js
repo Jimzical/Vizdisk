@@ -35,7 +35,7 @@ function getDirectChildren(node) {
             return {
                 name: child.name,
                 path: child.path,
-                value: child.size || 0,
+                value: child.value || 0,
                 type: "file",
                 _original: child
             };
