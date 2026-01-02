@@ -1,6 +1,6 @@
-# DiskTree
+# VizDisk
 
-DiskTree is a lightweight tool that visualizes your disk usage as an interactive tree map. It uses `ncdu` to scan directories efficiently and serves a D3.js visualization in your browser.
+VizDisk is a lightweight tool that visualizes your disk usage as an interactive tree map. It uses `ncdu` to scan directories efficiently and serves a D3.js visualization in your browser.
 
 ## Features
 
@@ -26,8 +26,8 @@ DiskTree is a lightweight tool that visualizes your disk usage as an interactive
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/Jimzical/disktree.git
-    cd disktree
+    git clone https://github.com/jimzical/vizdisk.git
+    cd vizdisk
     ```
 
 2.  Run the application:
