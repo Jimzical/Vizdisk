@@ -37,9 +37,7 @@ func main() {
 
 	fmt.Printf("Scanning '%s' with ncdu... (this may take a moment)\n", scanDir)
 
-	// 3. Run ncdu and capture output directly
-	// -o - tells ncdu to output JSON to stdout
-	cmd := exec.Command("ncdu", "-o", "-", scanDir)
+	cmd := exec.Command("ncdu", "-o", "-", "-x", "--exclude-kernfs", scanDir)
 
 	// Increase buffer for large outputs if necessary, but ReadAll handles it
 	output, err := cmd.Output()
@@ -76,12 +74,18 @@ func main() {
 		json.NewEncoder(w).Encode(rootNode)
 	})
 
-	port := "8810"
+	port := os.Getenv("NCDU_PORT")
+	if port == "" {
+		port = "8810"
+	}
 	url := "http://localhost:" + port
 	fmt.Printf("Serving at %s\n", url)
 
 	// 6. Open Browser
-	openBrowser(url)
+	// Only try to open browser if not running in a container (simple heuristic)
+	if os.Getenv("IS_DOCKER_CONTAINER") != "true" {
+		openBrowser(url)
+	}
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
