@@ -8,6 +8,24 @@ const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
 
 let currentNode;
 let navigationStack = [];
+let currentView = 'map';
+
+function switchView(view) {
+    currentView = view;
+    
+    // Update buttons
+    document.querySelectorAll('.view-toggle button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-${view}`).classList.add('active');
+    
+    // Update content
+    document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+    
+    // Re-render if needed (especially for map resizing)
+    if (currentNode) {
+        render(currentNode);
+    }
+}
 
 function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -75,9 +93,62 @@ function updateBreadcrumbs() {
 function render(node) {
     currentNode = node;
     
+    // Always render list (it's cheap)
+    renderList(node);
+
+    // Only render map if visible
+    if (currentView === 'map') {
+        renderMap(node);
+    }
+    
+    updateBreadcrumbs();
+    updateInfo(node);
+}
+
+function renderList(node) {
+    const tbody = document.querySelector("#file-table tbody");
+    tbody.innerHTML = '';
+    
+    const children = getDirectChildren(node);
+    // Sort by size desc
+    children.sort((a, b) => b.value - a.value);
+    
+    const maxSize = children.length > 0 ? children[0].value : 1;
+
+    children.forEach(child => {
+        const tr = document.createElement("tr");
+        
+        const icon = child.type === 'directory' ? '📁' : '📄';
+        const percent = (child.value / maxSize) * 100;
+        
+        tr.innerHTML = `
+            <td><span class="type-icon">${icon}</span>${child.name}</td>
+            <td>${formatBytes(child.value)}</td>
+            <td>${child.type}</td>
+            <td>
+                <div class="size-bar-bg">
+                    <div class="size-bar-fill" style="width: ${percent}%"></div>
+                </div>
+            </td>
+        `;
+        
+        if (child.type === 'directory') {
+            tr.addEventListener("click", () => {
+                navigationStack.push(child._original);
+                render(child._original);
+            });
+        }
+        
+        tbody.appendChild(tr);
+    });
+}
+
+function renderMap(node) {
     const rect = container.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
+    
+    if (width === 0 || height === 0) return; // Hidden
     
     svg.attr("viewBox", `0 0 ${width} ${height}`);
     
@@ -159,7 +230,6 @@ function render(node) {
             if (d.data.type === "directory") {
                 navigationStack.push(d.data._original);
                 render(d.data._original);
-                updateInfo(d.data._original);
             }
         })
         .on("mouseover", function(event, d) {
@@ -214,12 +284,8 @@ function render(node) {
             navigationStack.pop();
             const parent = navigationStack[navigationStack.length - 1];
             render(parent);
-            updateInfo(parent);
         }
     });
-    
-    updateBreadcrumbs();
-    updateInfo(node);
 }
 
 function updateInfo(node) {

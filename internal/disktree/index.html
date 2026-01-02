@@ -9,11 +9,37 @@
 </head>
 <body>
     <div id="app">
-        <h1>💾 NCDU Disk Space Visualizer</h1>
-        <div id="breadcrumbs"></div>
-        <div id="container">
-            <div id="tooltip"></div>
+        <div class="header-row">
+            <h1>💾 NCDU Disk Space Visualizer</h1>
+            <div class="view-toggle">
+                <button id="btn-map" class="active" onclick="switchView('map')">Map View</button>
+                <button id="btn-list" onclick="switchView('list')">List View</button>
+            </div>
         </div>
+        <div id="breadcrumbs"></div>
+        
+        <div id="view-map" class="view-content active">
+            <div id="container">
+                <div id="tooltip"></div>
+            </div>
+        </div>
+
+        <div id="view-list" class="view-content">
+            <div id="list-container">
+                <table id="file-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th style="width: 100px">Size</th>
+                            <th style="width: 80px">Type</th>
+                            <th style="width: 150px">Graph</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
         <div id="info">
             <h3>Instructions</h3>
             <p>Click on any directory to zoom in and explore its contents. The size of each box represents the disk space used.</p>
