@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCDU Disk Space Visualizer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1e1e1e;
+            color: #e0e0e0;
+        }
+        
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+        
+        h1 {
+            color: #fff;
+            font-size: 24px;
+        }
+        
+        #breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #2d2d2d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb-item {
+            cursor: pointer;
+            color: #6ca4f8;
+            transition: color 0.2s;
+        }
+        
+        .breadcrumb-item:hover {
+            color: #8cb8ff;
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-item.current {
+            color: #fff;
+            cursor: default;
+            font-weight: 500;
+        }
+        
+        .breadcrumb-item.current:hover {
+            text-decoration: none;
+        }
+        
+        .breadcrumb-separator {
+            color: #666;
+            user-select: none;
+        }
+        
+        #container {
+            flex: 1;
+            background: #2d2d2d;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        
+        #container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .cell {
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .cell:hover {
+            opacity: 0.8;
+        }
+        
+        .cell rect {
+            stroke: #1e1e1e;
+            stroke-width: 2px;
+        }
+        
+        .cell.file rect {
+            stroke-width: 1px;
+        }
+        
+        .cell text {
+            pointer-events: none;
+            fill: white;
+            font-size: 12px;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            dominant-baseline: hanging;
+        }
+        
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 13px;
+            z-index: 1000;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        #info {
+            padding: 15px;
+            background: #2d2d2d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            min-height: 100px;
+        }
+        
+        #info h3 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>💾 NCDU Disk Space Visualizer</h1>
+        <div id="breadcrumbs"></div>
+        <div id="container">
+            <div id="tooltip"></div>
+        </div>
+        <div id="info">
+            <h3>Instructions</h3>
+            <p>Click on any directory to zoom in and explore its contents. The size of each box represents the disk space used.</p>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById("container");
+        const tooltip = document.getElementById("tooltip");
+        
+        const svg = d3.select("#container")
+            .append("svg");
+        
+        const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+        
+        let currentNode;
+        let navigationStack = [];
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function getDirectChildren(node) {
+            if (!node.children) return [];
+            
+            return node.children.map(child => {
+                if (child.type === "directory") {
+                    const totalSize = child.value || (child.children ? 
+                        child.children.reduce((sum, c) => sum + (c.value || c.size || 0), 0) : 0);
+                    return {
+                        name: child.name,
+                        path: child.path,
+                        value: totalSize,
+                        type: "directory",
+                        _original: child
+                    };
+                } else {
+                    return {
+                        name: child.name,
+                        path: child.path,
+                        value: child.size || 0,
+                        type: "file",
+                        _original: child
+                    };
+                }
+            });
+        }
+        
+        function updateBreadcrumbs() {
+            const breadcrumbsDiv = document.getElementById("breadcrumbs");
+            breadcrumbsDiv.innerHTML = '';
+            
+            navigationStack.forEach((node, index) => {
+                if (index > 0) {
+                    const separator = document.createElement("span");
+                    separator.className = "breadcrumb-separator";
+                    separator.textContent = "›";
+                    breadcrumbsDiv.appendChild(separator);
+                }
+                
+                const crumb = document.createElement("span");
+                crumb.className = index === navigationStack.length - 1 ? 
+                    "breadcrumb-item current" : "breadcrumb-item";
+                crumb.textContent = node.name.split('/').pop() || node.name;
+                
+                if (index < navigationStack.length - 1) {
+                    crumb.addEventListener("click", () => {
+                        navigationStack = navigationStack.slice(0, index + 1);
+                        render(navigationStack[navigationStack.length - 1]);
+                        updateInfo(navigationStack[navigationStack.length - 1]);
+                    });
+                }
+                
+                breadcrumbsDiv.appendChild(crumb);
+            });
+        }
+        
+        function render(node) {
+            currentNode = node;
+            
+            const rect = container.getBoundingClientRect();
+            const width = rect.width;
+            const height = rect.height;
+            
+            svg.attr("viewBox", `0 0 ${width} ${height}`);
+            
+            const directChildren = getDirectChildren(node);
+            
+            const hierarchyData = {
+                name: node.name,
+                children: directChildren
+            };
+            
+            const root = d3.hierarchy(hierarchyData)
+                .sum(d => d.value || 0)
+                .sort((a, b) => b.value - a.value);
+            
+            d3.treemap()
+                .size([width, height])
+                .padding(2)
+                .round(true)
+                (root);
+            
+            const cells = svg.selectAll("g.cell")
+                .data(root.leaves(), d => d.data.path);
+            
+            cells.exit().remove();
+            
+            const cellsEnter = cells.enter()
+                .append("g")
+                .attr("class", d => `cell ${d.data.type}`);
+            
+            cellsEnter.append("rect");
+            cellsEnter.append("text");
+            
+            const cellsMerge = cellsEnter.merge(cells);
+            
+            cellsMerge
+                .attr("transform", d => `translate(${d.x0},${d.y0})`);
+            
+            cellsMerge.select("rect")
+                .attr("width", d => Math.max(0, d.x1 - d.x0))
+                .attr("height", d => Math.max(0, d.y1 - d.y0))
+                .attr("fill", (d, i) => colorScale(i));
+            
+            cellsMerge.select("text")
+                .attr("x", 4)
+                .attr("y", 4)
+                .each(function(d) {
+                    const textEl = d3.select(this);
+                    textEl.selectAll("*").remove();
+                    
+                    const boxWidth = d.x1 - d.x0;
+                    const boxHeight = d.y1 - d.y0;
+                    
+                    if (boxWidth < 30 || boxHeight < 20) return;
+                    
+                    const maxChars = Math.floor(boxWidth / 7);
+                    let displayName = d.data.name;
+                    if (displayName.length > maxChars) {
+                        displayName = displayName.substring(0, maxChars - 3) + '...';
+                    }
+                    
+                    textEl.append("tspan")
+                        .attr("x", 4)
+                        .attr("dy", "0em")
+                        .text(displayName);
+                    
+                    if (boxHeight > 40) {
+                        textEl.append("tspan")
+                            .attr("x", 4)
+                            .attr("dy", "1.2em")
+                            .style("font-size", "10px")
+                            .style("opacity", "0.8")
+                            .text(formatBytes(d.value));
+                    }
+                });
+            
+            cellsMerge
+                .on("click", function(event, d) {
+                    event.stopPropagation();
+                    if (d.data.type === "directory") {
+                        navigationStack.push(d.data._original);
+                        render(d.data._original);
+                        updateInfo(d.data._original);
+                    }
+                })
+                .on("mouseover", function(event, d) {
+                    const fullPath = d.data.path;
+                    const size = formatBytes(d.value);
+                    const type = d.data.type === "directory" ? "📁 Directory" : "📄 File";
+                    
+                    tooltip.innerHTML = `
+                        <div><strong>${type}</strong></div>
+                        <div>${d.data.name}</div>
+                        <div style="opacity: 0.7; margin-top: 4px;">${size}</div>
+                    `;
+                    tooltip.style.opacity = "1";
+                })
+                .on("mousemove", function(event) {
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    let left = event.clientX + 15;
+                    let top = event.clientY + 15;
+                    
+                    // If tooltip would go off right edge, position it to the left of cursor
+                    if (left + tooltipRect.width > window.innerWidth - 10) {
+                        left = event.clientX - tooltipRect.width - 15;
+                    }
+                    
+                    // If tooltip would go off bottom of container, position it well above cursor
+                    // Add extra buffer to account for the info panel
+                    if (top + tooltipRect.height > containerRect.bottom - 10) {
+                        top = event.clientY - tooltipRect.height - 75;
+                    }
+                    
+                    // Ensure tooltip doesn't go off left edge
+                    if (left < 10) {
+                        left = 10;
+                    }
+                    
+                    // Ensure tooltip doesn't go off top edge
+                    if (top < containerRect.top) {
+                        top = containerRect.top + 10;
+                    }
+                    
+                    tooltip.style.left = left + "px";
+                    tooltip.style.top = top + "px";
+                })
+                .on("mouseout", function() {
+                    tooltip.style.opacity = "0";
+                });
+            
+            svg.on("click", function(event) {
+                if (event.target.tagName === 'svg' && navigationStack.length > 1) {
+                    navigationStack.pop();
+                    const parent = navigationStack[navigationStack.length - 1];
+                    render(parent);
+                    updateInfo(parent);
+                }
+            });
+            
+            updateBreadcrumbs();
+            updateInfo(node);
+        }
+        
+        function updateInfo(node) {
+            const totalSize = node.value || (node.children ? 
+                node.children.reduce((sum, c) => sum + (c.value || c.size || 0), 0) : 0);
+            const itemCount = node.children?.length || 0;
+            
+            d3.select("#info").html(`
+                <h3>📁 ${node.name}</h3>
+                <p><strong>Path:</strong> ${node.path}</p>
+                <p><strong>Total Size:</strong> ${formatBytes(totalSize)}</p>
+                <p><strong>Items:</strong> ${itemCount}</p>
+                <p style="margin-top: 10px; opacity: 0.7;">
+                    ${navigationStack.length > 1 ? "Click background to go back. " : ""}
+                    Click on directories to zoom in.
+                </p>
+            `);
+        }
+        
+        window.addEventListener("resize", () => {
+            if (currentNode) render(currentNode);
+        });
+        
+        fetch("/data")
+            .then(res => res.json())
+            .then(data => {
+                currentNode = data;
+                navigationStack = [data];
+                render(data);
+            })
+            .catch(error => {
+                // Fallback for local file opening
+                console.log("Fetch /data failed, trying transformed.json...");
+                fetch("transformed.json")
+                    .then(res => res.json())
+                    .then(data => {
+                        currentNode = data;
+                        navigationStack = [data];
+                        render(data);
+                    })
+                    .catch(err2 => {
+                        console.error("Error loading data:", error);
+                        document.getElementById("info").innerHTML = `
+                            <h3>❌ Error</h3>
+                            <p>Failed to load data. Please make sure the server is running or transformed.json exists.</p>
+                            <p style="margin-top: 10px; opacity: 0.7;">Error: ${error.message}</p>
+                        `;
+                    });
+            });
+    </script>
+</body>
+</html>
