@@ -2,6 +2,10 @@
 
 VizDisk is a lightweight tool that visualizes your disk usage as an interactive tree map. It uses `ncdu` to scan directories efficiently and serves a D3.js visualization in your browser.
 
+## Why Vizdisk?
+
+I wanted something like WinDirStat / WizTree, but with a modern interface and the ability to run it on a headless server. It’s basically a quick “what’s eating my disk?” dashboard I can use locally or over SSH without needing a desktop UI.
+
 ## Features
 
 *   **Fast Scanning**: Leverages `ncdu` for efficient disk usage analysis.
