@@ -1,6 +1,6 @@
 module github.com/jimzical/vizdisk
 
-go 1.25.5
+go 1.24.0
 
 require github.com/tdewolff/minify/v2 v2.24.8
 

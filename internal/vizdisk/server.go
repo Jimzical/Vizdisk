@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -29,7 +30,9 @@ func init() {
 func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	data, _ := content.ReadFile("index.html")
 	w.Header().Set("Content-Type", "text/html")
-	w.Write(data)
+	if _, err := w.Write(data); err != nil {
+		log.Println("Error writing index:", err)
+	}
 }
 
 func HandleCSS(w http.ResponseWriter, r *http.Request) {
@@ -38,9 +41,13 @@ func HandleCSS(w http.ResponseWriter, r *http.Request) {
 
 	mw := &bytes.Buffer{}
 	if err := m.Minify("text/css", mw, bytes.NewReader(data)); err == nil {
-		w.Write(mw.Bytes())
+		if _, err := w.Write(mw.Bytes()); err != nil {
+			log.Println("Error writing minified css:", err)
+		}
 	} else {
-		w.Write(data)
+		if _, err := w.Write(data); err != nil {
+			log.Println("Error writing css:", err)
+		}
 	}
 }
 
@@ -50,9 +57,13 @@ func HandleJS(w http.ResponseWriter, r *http.Request) {
 
 	mw := &bytes.Buffer{}
 	if err := m.Minify("application/javascript", mw, bytes.NewReader(data)); err == nil {
-		w.Write(mw.Bytes())
+		if _, err := w.Write(mw.Bytes()); err != nil {
+			log.Println("Error writing minified js:", err)
+		}
 	} else {
-		w.Write(data)
+		if _, err := w.Write(data); err != nil {
+			log.Println("Error writing js:", err)
+		}
 	}
 }
 
@@ -82,6 +93,8 @@ func HandleData(scanDir string) http.HandlerFunc {
 		b64Encoder := base64.NewEncoder(base64.StdEncoding, output)
 		defer b64Encoder.Close()
 
-		json.NewEncoder(b64Encoder).Encode(rootNode)
+		if err := json.NewEncoder(b64Encoder).Encode(rootNode); err != nil {
+			log.Println("Error encoding data:", err)
+		}
 	}
 }
