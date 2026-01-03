@@ -11,7 +11,6 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
       - darwin
     goarch:
       - amd64
@@ -25,16 +24,13 @@ builds:
 archives:
   - formats:
       - tar.gz
+      - binary
     # this name template makes the tar.gz only contain the binary name
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
       {{- .Os }}_
       {{- .Arch }}
-    format_overrides:
-      - goos: windows
-        formats:
-          - zip
 
 checksum:
   name_template: 'checksums.txt'
@@ -44,7 +40,18 @@ snapshot:
 
 changelog:
   sort: asc
+  use: github
+  groups:
+    - title: Features
+      regexp: "^.*feat((\\([\\w\\-]+\\))?):"
+      order: 0
+    - title: "Bug Fixes"
+      regexp: "^.*fix((\\([\\w\\-]+\\))?):"
+      order: 1
+    - title: Others
+      order: 999
   filters:
     exclude:
       - '^docs:'
       - '^test:'
+      - '^chore:'
