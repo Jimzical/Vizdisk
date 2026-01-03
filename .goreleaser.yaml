@@ -21,6 +21,19 @@ builds:
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
 
+dockers:
+  - image_templates:
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}"
+      - "ghcr.io/jimzical/vizdisk:latest"
+    dockerfile: Dockerfile.release
+    goos: linux
+    goarch: amd64
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
 archives:
   - formats:
       - tar.gz
