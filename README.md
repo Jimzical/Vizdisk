@@ -25,6 +25,7 @@ VizDisk is a lightweight tool that visualizes your disk usage as an interactive 
 ### Option 1: Download Binary (Recommended)
 Download the latest binary for your OS from the [Releases Page](https://github.com/jimzical/vizdisk/releases).
 
+> Note: The downloaded binary still requires `ncdu` to be installed and available in your `PATH` (see **Prerequisites → For Local Execution**).
 ### Option 2: Docker (Easiest)
 ```bash
 docker run -p 8810:8810 -v /:/scan:ro ghcr.io/jimzical/vizdisk:latest
