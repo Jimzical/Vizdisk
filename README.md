@@ -1,5 +1,4 @@
 # VizDisk
-
 VizDisk is a lightweight tool that visualizes your disk usage as an interactive tree map. It uses `ncdu` to scan directories efficiently and serves a D3.js visualization in your browser.
 
 ## Features
@@ -40,7 +39,6 @@ go build -o vizdisk main.go
 ```
 
 ## Usage
-
 ### Running Locally
 ```bash
 # Scan the current directory
@@ -87,6 +85,16 @@ The browser should open automatically at `http://localhost:8810`.
     ```
 
 3.  Open `http://localhost:8810` in your browser.
+
+- Map View
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/3f099747-02de-40fe-bbd1-138ba10edfb7" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/eed0200b-a66a-4120-9a6d-9c19ace95ede" />
+
+- List View
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/5277526c-80e1-40db-8d8d-8bff547a7910" />
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/defc315f-86b4-4558-86b7-d717155a69e2" />
+
+
 
 ## Configuration
 
