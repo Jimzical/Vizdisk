@@ -38,6 +38,8 @@ I wanted something like WinDirStat / WizTree, but with a modern interface and th
 
 VizDisk scans whatever is mounted at `/scan` inside the container.
 
+By default, the examples below bind the web UI to `127.0.0.1` (localhost) for safety. If you want it accessible from your LAN, remove the `127.0.0.1:` prefix in the port mapping.
+
 ### Docker Compose
 
 Create a `compose.yml`:
@@ -47,7 +49,7 @@ services:
     vizdisk:
         image: ghcr.io/jimzical/vizdisk:latest
         ports:
-            - "8810:8810"
+            - "127.0.0.1:8810:8810"
         volumes:
             # Mount the directory you want to scan to /scan in the container.
             # Example: scan your whole machine (read-only):
@@ -75,13 +77,23 @@ To scan a different folder, edit the volume mapping in `compose.yml` (mount your
 
 Scan your whole machine (read-only):
 ```bash
-docker run --rm -p 8810:8810 -v /:/scan:ro ghcr.io/jimzical/vizdisk:latest
+docker run --rm -p 127.0.0.1:8810:8810 -v /:/scan:ro ghcr.io/jimzical/vizdisk:latest
 ```
 
 Scan only your home directory (read-only):
 ```bash
-docker run --rm -p 8810:8810 -v $HOME:/scan:ro ghcr.io/jimzical/vizdisk:latest
+docker run --rm -p 127.0.0.1:8810:8810 -v $HOME:/scan:ro ghcr.io/jimzical/vizdisk:latest
 ```
+
+#### Remote access (SSH port-forward)
+
+If VizDisk is running on a remote server and you’re connected via SSH, you can tunnel it to your laptop:
+
+```bash
+ssh -L 8810:127.0.0.1:8810 user@your-server
+```
+
+Then open `http://localhost:8810` on your laptop.
 
 ## Installation
 
@@ -113,7 +125,7 @@ The browser should open automatically at `http://localhost:8810`.
 
 ```bash
 docker build -t vizdisk:local .
-docker run --rm -p 8810:8810 -v $(pwd):/scan:ro vizdisk:local
+docker run --rm -p 127.0.0.1:8810:8810 -v $(pwd):/scan:ro vizdisk:local
 ```
 ## Configuration
 
