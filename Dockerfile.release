@@ -1,0 +1,20 @@
+FROM alpine:latest
+
+# Install ncdu (runtime dependency)
+RUN apk add --no-cache ncdu
+
+# Copy the binary that GoReleaser built
+COPY vizdisk /usr/bin/vizdisk
+
+ENV IS_DOCKER_CONTAINER=true
+ENV NCDU_PORT=8810
+WORKDIR /scan
+
+# Create a non-root user and ensure it owns the binary and working directory
+RUN addgroup -S vizdisk && adduser -S -G vizdisk vizdisk && \
+    chown -R vizdisk:vizdisk /scan /usr/bin/vizdisk
+
+USER vizdisk
+EXPOSE 8810
+
+ENTRYPOINT ["/usr/bin/vizdisk", "."]
