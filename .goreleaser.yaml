@@ -22,9 +22,9 @@ builds:
       - -X main.date={{.Date}}
 
 dockers:
+  # AMD64 Build
   - image_templates:
-      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}"
-      - "ghcr.io/jimzical/vizdisk:latest"
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-amd64"
     dockerfile: Dockerfile.release
     goos: linux
     goarch: amd64
@@ -33,6 +33,31 @@ dockers:
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64"
+
+  # ARM64 Build
+  - image_templates:
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-arm64"
+    dockerfile: Dockerfile.release
+    goos: linux
+    goarch: arm64
+    build_flag_templates:
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: "ghcr.io/jimzical/vizdisk:{{ .Tag }}"
+    image_templates:
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-amd64"
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-arm64"
+  
+  - name_template: "ghcr.io/jimzical/vizdisk:latest"
+    image_templates:
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-amd64"
+      - "ghcr.io/jimzical/vizdisk:{{ .Tag }}-arm64"
 
 archives:
   - formats:
