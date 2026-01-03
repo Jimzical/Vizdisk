@@ -20,24 +20,34 @@ VizDisk is a lightweight tool that visualizes your disk usage as an interactive 
 ### For Docker Execution
 *   **Docker**
 
-## Getting Started
+## Installation
+
+### Option 1: Download Binary (Recommended)
+Download the latest binary for your OS from the [Releases Page](https://github.com/jimzical/vizdisk/releases).
+
+### Option 2: Docker (Easiest)
+```bash
+docker run -p 8810:8810 -v /:/scan:ro ghcr.io/jimzical/vizdisk:latest
+```
+*Note: This mounts your root directory `/` as read-only to `/scan` inside the container.*
+
+### Option 3: Build from Source
+```bash
+git clone https://github.com/jimzical/vizdisk.git
+cd vizdisk
+go build -o vizdisk main.go
+```
+
+## Usage
 
 ### Running Locally
+```bash
+# Scan the current directory
+./vizdisk
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/jimzical/vizdisk.git
-    cd vizdisk
-    ```
-
-2.  Run the application:
-    ```bash
-    # Scan the current directory
-    go run main.go
-
-    # Or scan a specific directory
-    go run main.go /path/to/scan
-    ```
+# Or scan a specific directory
+./vizdisk /path/to/scan
+```
 
 3.  The browser should open automatically at `http://localhost:8810`.
 
