@@ -49,7 +49,7 @@ go build -o vizdisk main.go
 ./vizdisk /path/to/scan
 ```
 
-3.  The browser should open automatically at `http://localhost:8810`.
+The browser should open automatically at `http://localhost:8810`.
 
 ### Building the Binary
 
