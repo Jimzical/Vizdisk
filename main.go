@@ -13,10 +13,19 @@ import (
 	"time"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	// Setup context for graceful shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	log.Printf("Starting Vizdisk %s (commit: %s, built at: %s)", version, commit, date)
+
 
 	// Determine Scan Directory, default to current directory
 	scanDir := "."
