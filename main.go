@@ -26,7 +26,6 @@ func main() {
 
 	log.Printf("Starting Vizdisk %s (commit: %s, built at: %s)", version, commit, date)
 
-
 	// Determine Scan Directory, default to current directory
 	scanDir := "."
 	if len(os.Args) > 1 {
