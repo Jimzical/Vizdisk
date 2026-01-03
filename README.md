@@ -112,3 +112,12 @@ Example:
 export NCDU_PORT=9090
 go run main.go
 ```
+
+## Future plans
+- [ ] Add basic authentication to restrict access
+- [ ] Add ability to restrict to localhost only (bind host option)
+- [ ] Add filtering options (e.g., exclude certain file types or directories)
+- [ ] Add option to export reports (e.g., CSV, JSON)
+- [ ] Add a scan progress indicator / "scanning..." status
+- [ ] Cache scan results (avoid re-scanning on every page refresh)
+- [ ] Add an option to rescan on demand
