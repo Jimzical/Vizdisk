@@ -23,7 +23,8 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     # this name template makes the tar.gz only contain the binary name
     name_template: >-
       {{ .ProjectName }}_
@@ -32,7 +33,8 @@ archives:
       {{- .Arch }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 
 checksum:
   name_template: 'checksums.txt'
