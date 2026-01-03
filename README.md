@@ -4,7 +4,7 @@ VizDisk is a lightweight tool that visualizes your disk usage as an interactive 
 
 ## Why Vizdisk?
 
-I wanted something like WinDirStat / WizTree, but with a modern interface and the ability to run it on a headless server. It’s basically a quick “what’s eating my disk?” dashboard I can use locally or over SSH without needing a desktop UI.
+I wanted something like WinDirStat / WizTree, but with a modern interface and the ability to run it on a headless server. It’s basically a quick "what’s eating my disk?" dashboard for a homeserver that I can open in a browser.
 
 ## Features
 
