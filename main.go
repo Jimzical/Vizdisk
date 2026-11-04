@@ -38,10 +38,7 @@ func main() {
 	}
 
 	// 5. Setup Server
-	http.HandleFunc("/", vizdisk.HandleIndex)
-	http.HandleFunc("/style.css", vizdisk.HandleCSS)
-	http.HandleFunc("/app.js", vizdisk.HandleJS)
-	http.HandleFunc("/data", vizdisk.HandleData(scanDir))
+	mux := setupRouter(scanDir)
 
 	port := os.Getenv("NCDU_PORT")
 	if port == "" {
@@ -58,7 +55,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: nil, // Uses DefaultServeMux
+		Handler: mux,
 	}
 
 	// Run server in a goroutine
@@ -82,4 +79,22 @@ func main() {
 	}
 
 	fmt.Println("Server exiting")
+}
+
+// setupRouter configures and returns an isolated HTTP request multiplexer.
+func setupRouter(scanDir string) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", vizdisk.HandleIndex)
+	mux.HandleFunc("/style.css", vizdisk.HandleCSS)
+	mux.HandleFunc("/app.js", vizdisk.HandleJS)
+	mux.HandleFunc("/data", vizdisk.HandleData(scanDir))
+	return mux
+}
+
+// setupServer creates an http.Server configured with an isolated router.
+func setupServer(scanDir, port string) *http.Server {
+	return &http.Server{
+		Addr:    ":" + port,
+		Handler: setupRouter(scanDir),
+	}
 }
