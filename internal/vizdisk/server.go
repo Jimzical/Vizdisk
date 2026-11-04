@@ -35,36 +35,32 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HandleCSS(w http.ResponseWriter, r *http.Request) {
-	data, _ := content.ReadFile("style.css")
-	w.Header().Set("Content-Type", "text/css")
+func serveStaticAsset(w http.ResponseWriter, filename string, contentType string) {
+	data, err := content.ReadFile(filename)
+	if err != nil {
+		log.Println("Error reading "+filename+":", err)
+		return
+	}
+	w.Header().Set("Content-Type", contentType)
 
 	mw := &bytes.Buffer{}
-	if err := m.Minify("text/css", mw, bytes.NewReader(data)); err == nil {
+	if err := m.Minify(contentType, mw, bytes.NewReader(data)); err == nil {
 		if _, err := w.Write(mw.Bytes()); err != nil {
-			log.Println("Error writing minified css:", err)
+			log.Println("Error writing minified "+filename+":", err)
 		}
 	} else {
 		if _, err := w.Write(data); err != nil {
-			log.Println("Error writing css:", err)
+			log.Println("Error writing "+filename+":", err)
 		}
 	}
 }
 
-func HandleJS(w http.ResponseWriter, r *http.Request) {
-	data, _ := content.ReadFile("app.js")
-	w.Header().Set("Content-Type", "application/javascript")
+func HandleCSS(w http.ResponseWriter, r *http.Request) {
+	serveStaticAsset(w, "style.css", "text/css")
+}
 
-	mw := &bytes.Buffer{}
-	if err := m.Minify("application/javascript", mw, bytes.NewReader(data)); err == nil {
-		if _, err := w.Write(mw.Bytes()); err != nil {
-			log.Println("Error writing minified js:", err)
-		}
-	} else {
-		if _, err := w.Write(data); err != nil {
-			log.Println("Error writing js:", err)
-		}
-	}
+func HandleJS(w http.ResponseWriter, r *http.Request) {
+	serveStaticAsset(w, "app.js", "application/javascript")
 }
 
 func HandleData(scanDir string) http.HandlerFunc {
