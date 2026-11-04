@@ -322,21 +322,10 @@ fetch("/data", {
         render(data);
     })
     .catch(error => {
-        // Fallback for local file opening
-        console.log("Fetch /data failed, trying transformed.json...");
-        fetch("transformed.json")
-            .then(res => res.json())
-            .then(data => {
-                currentNode = data;
-                navigationStack = [data];
-                render(data);
-            })
-            .catch(err2 => {
-                console.error("Error loading data:", error);
-                document.getElementById("info").innerHTML = `
-                    <h3>❌ Error</h3>
-                    <p>Failed to load data. Please make sure the server is running or transformed.json exists.</p>
-                    <p style="margin-top: 10px; opacity: 0.7;">Error: ${error.message}</p>
-                `;
-            });
+        console.error("Error loading data:", error);
+        document.getElementById("info").innerHTML = `
+            <h3>❌ Error</h3>
+            <p>Failed to load data. Please make sure the server is running.</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Error: ${error.message}</p>
+        `;
     });
